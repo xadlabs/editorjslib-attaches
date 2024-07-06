@@ -56,6 +56,8 @@ const LOADER_TIMEOUT = 500;
  * @property {object} notifier - Notifier API {@link https://github.com/codex-team/editor.js/blob/next/types/api/notifier.d.ts}
  */
 
+let staticPasteMimeTypes = ['application/*', 'text/*', 'video/*', 'audio/*'];
+
 /**
  * @class AttachesTool
  * @classdesc AttachesTool for Editor.js 2.0
@@ -304,9 +306,18 @@ export default class AttachesTool {
        * Drag n drop file from into the Editor
        */
       files: {
-        mimeTypes: [ 'application/*' ],
+        mimeTypes: staticPasteMimeTypes,
       },
     };
+  }
+
+  /**
+   * Set paste mime types
+   *
+   * @param {string[]} types mime types
+   */
+  static setPasteMimeTypes(types) {
+    staticPasteMimeTypes = types;
   }
 
   /**
@@ -323,6 +334,14 @@ export default class AttachesTool {
       case 'file': {
         const file = event.detail.file;
 
+        if (this.config.pasteTypes) {
+          const allowedTypes = this.config.pasteTypes;
+          const isAllowed = allowedTypes.some((type) => file.type.startsWith(type.endsWith('/*') ? type.slice(0, -1) : type));
+
+          if (!isAllowed) {
+            throw new Error('File type not allowed');
+          }
+        }
         this.uploader.uploadByFile(file, {
           onPreview: () => {
             this.nodes.wrapper.classList.add(this.CSS.wrapperLoading, this.CSS.loader);

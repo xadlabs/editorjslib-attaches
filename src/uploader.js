@@ -33,13 +33,18 @@ export default class Uploader {
     let upload;
 
     // custom uploading
-    if (this.config.uploader && typeof this.config.uploader.uploadByFile === 'function') {
+    if (
+      this.config.uploader &&
+      typeof this.config.uploader.uploadByFile === 'function'
+    ) {
       upload = ajax.selectFiles({ accept: this.config.types }).then((files) => {
         onPreview();
         const customUpload = this.config.uploader.uploadByFile(files[0]);
 
         if (!isPromise(customUpload)) {
-          console.warn('Custom uploader method uploadByFile should return a Promise');
+          console.warn(
+            'Custom uploader method uploadByFile should return a Promise'
+          );
         }
 
         return customUpload;
@@ -47,25 +52,31 @@ export default class Uploader {
 
       // default uploading
     } else {
-      upload = ajax.transport({
-        url: this.config.endpoint,
-        accept: this.config.types,
-        beforeSend: () => onPreview(),
-        fieldName: this.config.field,
-        headers: this.config.additionalRequestHeaders || {},
-      }).then((response) => response.body);
+      upload = ajax
+        .transport({
+          url: this.config.endpoint,
+          accept: this.config.types,
+          beforeSend: () => onPreview(),
+          fieldName: this.config.field,
+          headers: this.config.additionalRequestHeaders || {},
+        })
+        .then((response) => response.body);
     }
 
-    upload.then((response) => {
-      this.onUpload(response);
-    }).catch((errorResponse) => {
-      const error = errorResponse.body;
+    upload
+      .then((response) => {
+        this.onUpload(response);
+      })
+      .catch((errorResponse) => {
+        const error = errorResponse.body;
 
-      const message = (error && error.message) ? error.message : this.config.errorMessage;
+        const message =
+          error && error.message ? error.message : this.config.errorMessage;
 
-      this.onError(message);
-    });
+        this.onError(message);
+      });
   }
+
   /**
    * Handle clicks on the upload file button
    * Fires ajax.post()
@@ -74,39 +85,67 @@ export default class Uploader {
    * @param {Function} onPreview - file pasted by drag-n-drop
    */
   uploadByFile(file, { onPreview }) {
-    /**
-     * Custom uploading
-     * or default uploading
-     */
+    if (onPreview) {
+      /**
+       * Load file for preview
+       *
+       * @type {FileReader}
+       */
+      const reader = new FileReader();
+
+      reader.readAsDataURL(file);
+      reader.onload = (e) => {
+        onPreview(e.target.result);
+      };
+    }
     let upload;
 
     // custom uploading
-    if (this.config.uploader && typeof this.config.uploader.uploadByFile === 'function') {
+    if (
+      this.config.uploader &&
+      typeof this.config.uploader.uploadByFile === 'function'
+    ) {
       upload = this.config.uploader.uploadByFile(file);
 
       if (!isPromise(upload)) {
-        console.warn('Custom uploader method uploadByFile should return a Promise');
+        console.warn(
+          'Custom uploader method uploadByFile should return a Promise'
+        );
       }
-      // default uploading
     } else {
-      upload = ajax.transport({
+      /**
+       * Default uploading
+       */
+      const formData = new FormData();
+
+      formData.append(this.config.field, file);
+
+      if (this.config.additionalRequestData && Object.keys(this.config.additionalRequestData).length) {
+        Object.entries(this.config.additionalRequestData).forEach(([name, value]) => {
+          formData.append(name, value);
+        });
+      }
+
+      upload = ajax.post({
         url: this.config.endpoint,
-        accept: this.config.types,
-        beforeSend: () => onPreview(),
-        fieldName: this.config.field,
-        headers: this.config.additionalRequestHeaders || {},
-      }).then((response) => response.body);
+        data: formData,
+        type: ajax.contentType.JSON,
+        headers: this.config.additionalRequestHeaders,
+      }).then(response => response.body);
     }
 
-    upload.then((response) => {
-      this.onUpload(response);
-    }).catch((errorResponse) => {
-      const error = errorResponse.body;
+    upload
+      .then((response) => {
+        this.onUpload(response);
+      })
+      .catch((errorResponse) => {
+        const error = errorResponse.body;
 
-      const message = (error && error.message) ? error.message : this.config.errorMessage;
+        const message =
+          error && error.message ? error.message : this.config.errorMessage;
 
-      this.onError(message);
-    });
+        this.onError(message);
+      });
   }
 }
 /**
