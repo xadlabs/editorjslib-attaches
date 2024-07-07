@@ -1,7 +1,7 @@
 {
-  "name": "editorjslib-attaches",
-  "version": "1.3.0",
-  "repository": "https://github.com/editor-js/attaches",
+  "name": "zmeditorjslib-attaches",
+  "version": "1.3.2",
+  "repository": "https://github.com/xadlabs/editorjslib-attaches.git",
   "license": "MIT",
   "scripts": {
     "build": "cross-env NODE_OPTIONS=--openssl-legacy-provider webpack --mode production",
